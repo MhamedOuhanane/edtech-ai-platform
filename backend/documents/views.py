@@ -14,7 +14,10 @@ from .storage import delete_file, upload_file
 
 # Point d'entrée temporaire pour lancer l'ingestion en arrière-plan.
 def trigger_document_ingestion(document: Document) -> None:
-    return None
+    # Import local pour éviter une dépendance circulaire au chargement du module.
+    from .ingestion import process_document
+
+    process_document(document.id)
 
 
 # API CRUD des documents, filtrée selon le rôle de l'utilisateur.
