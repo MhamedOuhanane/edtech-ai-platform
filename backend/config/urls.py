@@ -9,4 +9,6 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),
     # Routes des documents exposées sous /api/documents/.
     path('api/documents/', include('documents.urls')),
+    # Routes du chat exposées sous /api/chat/.
+    path('api/chat/', include('chat.urls')),
 ]

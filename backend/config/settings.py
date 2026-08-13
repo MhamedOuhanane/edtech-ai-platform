@@ -2,15 +2,28 @@
 
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlparse
 import os
 
-from dotenv import load_dotenv
-import dj_database_url
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - fallback si python-dotenv n'est pas installé.
+    load_dotenv = None
 
 
 # Chargement des variables d'environnement depuis le fichier .env.
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+if load_dotenv is not None:
+    load_dotenv(BASE_DIR / ".env")
+else:
+    env_file = BASE_DIR / ".env"
+    if env_file.exists():
+        for raw_line in env_file.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
 # Paramètres de base du projet.
@@ -70,9 +83,21 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Base PostgreSQL alimentée par DATABASE_URL.
+def _parse_database_url(database_url: str) -> dict:
+    parsed_url = urlparse(database_url)
+    return {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": parsed_url.path.lstrip("/") or "",
+        "USER": parsed_url.username or "",
+        "PASSWORD": parsed_url.password or "",
+        "HOST": parsed_url.hostname or "",
+        "PORT": parsed_url.port or "",
+    }
+
+
 DATABASES = {
-    "default": dj_database_url.config(
-        default=os.getenv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/edtech_ai_platform")
+    "default": _parse_database_url(
+        os.getenv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/edtech_ai_platform")
     )
 }
 
